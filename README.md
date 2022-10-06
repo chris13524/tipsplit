@@ -1,1 +1,7 @@
-# tipsplit
+# TipSplit
+
+## Development
+
+```bash
+npm run dev
+```
