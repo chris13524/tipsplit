@@ -1,24 +1,18 @@
-import { Center, Grid, List, NumberInput, Select, TextInput, Title } from '@mantine/core'
+import { Accordion, Center, List, NumberInput, Stack, useMantineTheme } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { randomId } from '@mantine/hooks';
+import { randomId, useMediaQuery } from '@mantine/hooks';
 import type { NextPage } from 'next'
-import { useEffect, useState } from 'react';
-
-type Item = {
-  person: string,
-  price: number,
-  quantity: number,
-  note: string,
-  key: string,
-};
+import { useEffect } from 'react';
+import InputItem from '../components/input-item';
+import { Item } from '../lib/item';
 
 function makeNewItem(): Item {
   return {
+    key: randomId(),
     person: "",
     price: 0,
     quantity: 1,
     note: "",
-    key: randomId(),
   };
 }
 
@@ -29,8 +23,6 @@ const Home: NextPage = () => {
       total: 0,
     },
   });
-
-  const [persons, setPersons] = useState([] as string[]);
 
   const subtotal = form.values.items
     .map(item => item.price * item.quantity)
@@ -63,87 +55,77 @@ const Home: NextPage = () => {
     return personSubtotal + tip * (personSubtotal / subtotal);
   };
 
+  const theme = useMantineTheme();
+  const mobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm}px)`);
+
+  const inputItem = (index: number, value: Item) => <InputItem
+    index={index}
+    form={form}
+  />;
+
+  const items = () => (
+    <>
+      {form.values.items.map((value, index) => (
+        <div key={value.key} style={{
+          display: "flex",
+          flexDirection: "row",
+          columnGap: 10,
+        }}>
+          {mobile ? <>
+            <Accordion.Item value={value.key}>
+              <Accordion.Control>
+                {value.person || "New item"}
+              </Accordion.Control>
+              <Accordion.Panel>
+                {inputItem(index, value)}
+              </Accordion.Panel>
+            </Accordion.Item>
+          </> : inputItem(index, value)}
+        </div>
+      ))}
+    </>
+  );
+
   return (
-    <Center>
-      <Grid>
-        <Grid.Col>
-          {form.values.items.map((value, index) => (
-            <div key={value.key} style={{
-              display: "flex",
-              flexDirection: "row",
-              columnGap: 10,
-            }}>
-              <Select
-                placeholder="Person"
-                nothingFound="Nothing found"
-                searchable
-                creatable
-                data={persons}
-                getCreateLabel={(query) => `+ Create ${query}`}
-                onCreate={(query) => {
-                  const item = query;
-                  setPersons((current) => [...current, item]);
-                  return item;
-                }}
-                {...form.getInputProps(`items.${index}.person`)}
-                style={{
-                  width: 120,
-                }}
-              />
-              <NumberInput
-                icon={"$"}
-                min={0}
-                precision={2}
-                step={0.01}
-                {...form.getInputProps(`items.${index}.price`)}
-                style={{
-                  width: 120,
-                }}
-              />
-              <NumberInput
-                min={1}
-                icon={"x"}
-                {...form.getInputProps(`items.${index}.quantity`)}
-                style={{
-                  width: 100,
-                }} />
-              <TextInput
-                placeholder="Note"
-                {...form.getInputProps(`items.${index}.note`)}
-                style={{
-                  width: 100,
-                }}
-              />
-            </div>
-          ))}
-          Subtotal: ${subtotal}
-          <NumberInput
-            label="Payment total"
-            icon={"$"}
-            min={0}
-            precision={2}
-            step={0.01}
-            {...form.getInputProps("total")}
-            style={{
-              width: 120,
-            }}
-          />
-        </Grid.Col>
-        <Grid.Col>
-          <Title>
-            {"->"}
-          </Title>
-        </Grid.Col>
-        <Grid.Col>
-          <List>
-            {persons.map(person => (
+    <Center p="md" pb={50}>
+      <Stack>
+        <h1>TipSplit</h1>
+        <p>Proportionally split tips, taxes, and fees.</p>
+
+        {mobile ? <>
+          <Accordion chevronPosition="left" defaultValue={form.values.items[0].key}>
+            {items()}
+          </Accordion>
+        </> : items()}
+
+        <p>Subtotal: ${subtotal}</p>
+
+        <NumberInput
+          label="Payment total"
+          icon={"$"}
+          min={0}
+          precision={2}
+          step={0.01}
+          {...form.getInputProps("total")}
+          style={{
+            width: 120,
+          }}
+        />
+
+        <h3>Each person owes</h3>
+        <List>
+          {[...new Set(
+            form.values.items
+              .map(item => item.person)
+              .filter(person => person != "")
+          )]
+            .map(person => (
               <List.Item key={person}>
                 {person}: ${amountPerPerson(person)}
               </List.Item>
             ))}
-          </List>
-        </Grid.Col>
-      </Grid>
+        </List>
+      </Stack>
     </Center>
   );
 };
