@@ -1,9 +1,10 @@
-import { Accordion, Center, List, NumberInput, Stack, useMantineTheme } from '@mantine/core'
+import { Accordion, Center, List, NumberInput, Space, Stack, Text, Title, useMantineTheme } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { randomId, useMediaQuery } from '@mantine/hooks';
 import type { NextPage } from 'next'
 import { useEffect } from 'react';
 import InputItem from '../components/input-item';
+import Result from '../components/result';
 import { Item } from '../lib/item';
 
 function makeNewItem(): Item {
@@ -46,17 +47,8 @@ const Home: NextPage = () => {
     }
   }, [JSON.stringify(form.values.items)]);
 
-  const amountPerPerson = (person: string) => {
-    const personSubtotal = form.values.items
-      .filter(item => item.person == person)
-      .map(item => item.price * item.quantity)
-      .reduce((sum, value) => sum + value);
-    const tip = form.values.total - subtotal;
-    return personSubtotal + tip * (personSubtotal / subtotal);
-  };
-
   const theme = useMantineTheme();
-  const mobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm}px)`);
+  const mobile = useMediaQuery(`(max-width: ${theme.breakpoints.xs}px)`);
 
   const inputItem = (index: number, value: Item) => <InputItem
     index={index}
@@ -72,9 +64,15 @@ const Home: NextPage = () => {
           columnGap: 10,
         }}>
           {mobile ? <>
-            <Accordion.Item value={value.key}>
+            <Accordion.Item
+              value={value.key}
+              style={{
+                width: "100%",
+              }}>
               <Accordion.Control>
-                {value.person || "New item"}
+                {value.person == "" ?
+                  "New item" :
+                  `${value.person} $${value.price} ${value.quantity > 1 ? `x${value.quantity}` : ""} ${value.note}`}
               </Accordion.Control>
               <Accordion.Panel>
                 {inputItem(index, value)}
@@ -89,20 +87,28 @@ const Home: NextPage = () => {
   return (
     <Center p="md" pb={50}>
       <Stack>
-        <h1>TipSplit</h1>
-        <p>Proportionally split tips, taxes, and fees.</p>
+        <Title>TipSplit</Title>
+        <Text>Proportionally split tips, taxes, and fees.</Text>
 
+        <Space />
+        <Title order={4}>Receipt</Title>
         {mobile ? <>
-          <Accordion chevronPosition="left" defaultValue={form.values.items[0].key}>
+          <Accordion chevronPosition="left"
+            defaultValue={form.values.items[0].key}
+            style={{
+              marginLeft: -16,
+              marginRight: -16,
+            }}
+          >
             {items()}
           </Accordion>
         </> : items()}
 
-        <p>Subtotal: ${subtotal}</p>
+        <Text>Subtotal: ${subtotal}</Text>
 
         <NumberInput
           label="Payment total"
-          icon={"$"}
+          icon="$"
           min={0}
           precision={2}
           step={0.01}
@@ -112,19 +118,11 @@ const Home: NextPage = () => {
           }}
         />
 
-        <h3>Each person owes</h3>
-        <List>
-          {[...new Set(
-            form.values.items
-              .map(item => item.person)
-              .filter(person => person != "")
-          )]
-            .map(person => (
-              <List.Item key={person}>
-                {person}: ${amountPerPerson(person)}
-              </List.Item>
-            ))}
-        </List>
+        <Result
+          items={form.values.items.map(item => ({ ...item, price: item.price * 100 }))}
+          subtotal={subtotal * 100}
+          total={form.values.total * 100}
+        />
       </Stack>
     </Center>
   );

@@ -12,7 +12,7 @@ const InputItem: NextPage<{
     }>,
 }> = ({ index, form }) => {
     const theme = useMantineTheme();
-    const mobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm}px)`);
+    const mobile = useMediaQuery(`(max-width: ${theme.breakpoints.xs}px)`);
 
     const contents = (
         <>
