@@ -10,6 +10,7 @@ const Result: NextPage<{ items: Item[], subtotal: number, total: number }> = ({ 
     )];
 
     let remainingTotal = total;
+    let remainingPercent = 1;
     const totals = Object.fromEntries(persons.map(person => {
         const personSubtotal = items
             .filter(item => item.person == person)
@@ -18,14 +19,12 @@ const Result: NextPage<{ items: Item[], subtotal: number, total: number }> = ({ 
 
         const percent = personSubtotal / subtotal;
 
-        // FIXME /() attempt actually causes us to do math on origional amount: `remainingTotal / (remainingTotal / total) == total`
-        // Maybe something involving the 1/(4-1) ~~ 1/.25=4 ~~ 1/( 1/0.23 - ??)  =
-        const exactOwe = remainingTotal * percent / (remainingTotal / total);
+        const exactOwe = remainingTotal * percent / remainingPercent;
 
         const truncatedOwe = Math.ceil(exactOwe);
 
         remainingTotal -= truncatedOwe;
-        console.log("remainingTotal", remainingTotal);
+        remainingPercent -= percent;
 
         return [person, truncatedOwe];
     }));
