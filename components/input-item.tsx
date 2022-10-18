@@ -42,6 +42,7 @@ const InputItem: NextPage<{
                 precision={2}
                 step={0.01}
                 {...form.getInputProps(`items.${index}.price`)}
+                onFocus={(e) => e.target.select()}
                 style={{
                     width: mobile ? "100%" : 120,
                     gridColumnStart: 1,
@@ -52,6 +53,7 @@ const InputItem: NextPage<{
                 min={1}
                 icon={"x"}
                 {...form.getInputProps(`items.${index}.quantity`)}
+                onFocus={(e) => e.target.select()}
                 style={{
                     width: mobile ? "100%" : 100,
                 }} />

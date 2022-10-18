@@ -113,6 +113,7 @@ const Home: NextPage = () => {
           precision={2}
           step={0.01}
           {...form.getInputProps("total")}
+          onFocus={(e) => e.target.select()}
           style={{
             width: 120,
           }}
