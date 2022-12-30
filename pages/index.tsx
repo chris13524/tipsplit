@@ -1,88 +1,50 @@
-import { Accordion, Center, List, NumberInput, Space, Stack, Text, Title, useMantineTheme } from '@mantine/core'
+import { Center, Divider, NumberInput, Space, Stack, Text, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { randomId, useMediaQuery } from '@mantine/hooks';
+import { randomId } from '@mantine/hooks';
 import type { NextPage } from 'next'
-import { useEffect } from 'react';
-import InputItem from '../components/input-item';
-import Result from '../components/result';
-import { Item } from '../lib/item';
+import InputPerson from '../components/person';
+import { Person } from '../lib/person';
 
-function makeNewItem(): Item {
-  return {
-    key: randomId(),
-    person: "",
-    price: 0,
-    quantity: 1,
-    note: "",
-  };
+export type FormType = {
+  persons: Person[],
+  total: number,
+};
+
+function personName(index: number): string {
+  return `Person ${index + 1}`;
+}
+
+function itemName(index: number): string {
+  return `Item ${index + 1}`;
 }
 
 const Home: NextPage = () => {
-  const form = useForm({
+  const form = useForm<FormType>({
     initialValues: {
-      items: [makeNewItem()],
+      persons: [{
+        key: randomId(),
+        name: personName(0),
+        items: [{
+          key: randomId(),
+          name: itemName(0),
+          price: 0,
+        }],
+      }, {
+        key: randomId(),
+        name: personName(1),
+        items: [{
+          key: randomId(),
+          name: itemName(0),
+          price: 0,
+        }],
+      }],
       total: 0,
     },
   });
 
-  const subtotal = form.values.items
-    .map(item => item.price * item.quantity)
-    .reduce((sum, value) => sum + value);
-
-  useEffect(() => {
-    const filteredItems = form.values.items
-      .filter(item => item.person != "" || item.price > 0 || item.note != "");
-    const newItem = makeNewItem();
-
-    const origionalKey = form.values.items[form.values.items.length - 1]?.key;
-    const newKey = filteredItems[filteredItems.length - 1]?.key;
-    if (origionalKey != newKey) {
-      newItem.key = origionalKey;
-    }
-
-    form.setFieldValue("items", [...filteredItems, newItem]);
-
-    if (subtotal > form.values.total) {
-      form.setFieldValue("total", subtotal);
-    }
-  }, [JSON.stringify(form.values.items)]);
-
-  const theme = useMantineTheme();
-  const mobile = useMediaQuery(`(max-width: ${theme.breakpoints.xs}px)`);
-
-  const inputItem = (index: number, value: Item) => <InputItem
-    index={index}
-    form={form}
-  />;
-
-  const items = () => (
-    <>
-      {form.values.items.map((value, index) => (
-        <div key={value.key} style={{
-          display: "flex",
-          flexDirection: "row",
-          columnGap: 10,
-        }}>
-          {mobile ? <>
-            <Accordion.Item
-              value={value.key}
-              style={{
-                width: "100%",
-              }}>
-              <Accordion.Control>
-                {value.person == "" ?
-                  "New item" :
-                  `${value.person} $${value.price} ${value.quantity > 1 ? `x${value.quantity}` : ""} ${value.note}`}
-              </Accordion.Control>
-              <Accordion.Panel>
-                {inputItem(index, value)}
-              </Accordion.Panel>
-            </Accordion.Item>
-          </> : inputItem(index, value)}
-        </div>
-      ))}
-    </>
-  );
+  const subtotal = form.values.persons
+    .flatMap(person => person.items.map(item => item.price))
+    .reduce((sum, price) => sum + price);
 
   return (
     <Center p="md" pb={50}>
@@ -92,38 +54,51 @@ const Home: NextPage = () => {
 
         <Space />
         <Title order={4}>Receipt</Title>
-        {mobile ? <>
-          <Accordion chevronPosition="left"
-            defaultValue={form.values.items[0].key}
+
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "1fr auto auto auto",
+          gridAutoRows: "auto",
+          gap: 10,
+        }}>
+          <Divider
+            color="red"
             style={{
-              marginLeft: -16,
-              marginRight: -16,
+              gridColumn: "1 / 5",
+            }} />
+          {form.values.persons.map((person, index) => (
+            <InputPerson key={person.key} index={index} form={form} />
+          ))}
+
+          <Text style={{
+            gridColumn: "1 / 3",
+          }}>
+            Subtotal
+          </Text>
+          <Text style={{
+            gridColumn: "3 / 5",
+          }}>
+            {subtotal}
+          </Text>
+
+          <Text style={{
+            gridColumn: "1 / 3",
+          }}>
+            Payment total
+          </Text>
+          <NumberInput
+            icon="$"
+            min={0}
+            precision={2}
+            step={0.01}
+            onFocus={(e) => e.target.select()}
+            {...form.getInputProps("total")}
+            style={{
+              gridColumn: "3 / 5",
+              width: 120,
             }}
-          >
-            {items()}
-          </Accordion>
-        </> : items()}
-
-        <Text>Subtotal: ${subtotal}</Text>
-
-        <NumberInput
-          label="Payment total"
-          icon="$"
-          min={0}
-          precision={2}
-          step={0.01}
-          {...form.getInputProps("total")}
-          onFocus={(e) => e.target.select()}
-          style={{
-            width: 120,
-          }}
-        />
-
-        <Result
-          items={form.values.items.map(item => ({ ...item, price: item.price * 100 }))}
-          subtotal={subtotal * 100}
-          total={form.values.total * 100}
-        />
+          />
+        </div>
       </Stack>
     </Center>
   );
