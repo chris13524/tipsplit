@@ -49,6 +49,7 @@ export const InputItem = forwardRef<InputItemRef, Props>(({ index, form, focusNe
                     gridColumnStart: 1,
                     gridColumnEnd: 3,
                 }}
+                rightSection={null}
             />
             <NumberInput
                 icon={"$"}
@@ -68,6 +69,7 @@ export const InputItem = forwardRef<InputItemRef, Props>(({ index, form, focusNe
                     gridColumnStart: 1,
                     gridColumnEnd: 2,
                 }}
+                hideControls
             />
             <NumberInput
                 min={1}
@@ -76,7 +78,9 @@ export const InputItem = forwardRef<InputItemRef, Props>(({ index, form, focusNe
                 onFocus={(e) => e.target.select()}
                 style={{
                     width: mobile ? "100%" : 100,
-                }} />
+                }}
+                hideControls
+            />
             <TextInput
                 placeholder="Note"
                 {...form.getInputProps(`items.${index}.note`)}
