@@ -1,18 +1,32 @@
 import { NumberInput, Select, TextInput, useMantineTheme } from "@mantine/core";
 import { UseFormReturnType } from "@mantine/form";
-import { useMediaQuery } from "@mantine/hooks";
-import { NextPage } from "next";
+import { getHotkeyHandler, useMediaQuery } from "@mantine/hooks";
 import { Item } from "../lib/item";
+import { forwardRef, useImperativeHandle, useRef } from "react";
 
-const InputItem: NextPage<{
+type Props = {
     index: number,
     form: UseFormReturnType<{
         items: Item[],
         total: number,
     }>,
-}> = ({ index, form }) => {
+    focusNext: () => void,
+};
+
+export type InputItemRef = {
+    focus: () => void,
+};
+
+export const InputItem = forwardRef<InputItemRef, Props>(({ index, form, focusNext }, ref) => {
     const theme = useMantineTheme();
     const mobile = useMediaQuery(`(max-width: ${theme.breakpoints.xs}px)`);
+
+    const priceRef = useRef<HTMLInputElement>();
+    useImperativeHandle(ref, () => ({
+        focus() {
+            priceRef.current!.focus();
+        },
+    }));
 
     const contents = (
         <>
@@ -43,6 +57,12 @@ const InputItem: NextPage<{
                 step={0.01}
                 {...form.getInputProps(`items.${index}.price`)}
                 onFocus={(e) => e.target.select()}
+                ref={priceRef}
+                onKeyDown={getHotkeyHandler([
+                    ["Enter", focusNext],
+                    ["Tab", focusNext],
+                ])}
+                onBlur={focusNext} // Capture Android Chromium "next field"
                 style={{
                     width: mobile ? "100%" : 120,
                     gridColumnStart: 1,
@@ -51,7 +71,7 @@ const InputItem: NextPage<{
             />
             <NumberInput
                 min={1}
-                icon={"x"}
+                icon="x"
                 {...form.getInputProps(`items.${index}.quantity`)}
                 onFocus={(e) => e.target.select()}
                 style={{
@@ -83,6 +103,7 @@ const InputItem: NextPage<{
             </> : contents}
         </>
     );
-};
+});
 
+InputItem.displayName = "InputItem";
 export default InputItem;

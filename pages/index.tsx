@@ -1,9 +1,9 @@
-import { Accordion, Center, List, NumberInput, Space, Stack, Text, Title, useMantineTheme } from '@mantine/core'
+import { Center, Divider, NumberInput, Space, Stack, Text, Title, useMantineTheme } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { randomId, useMediaQuery } from '@mantine/hooks';
 import type { NextPage } from 'next'
-import { useEffect } from 'react';
-import InputItem from '../components/input-item';
+import { useEffect, useRef } from 'react';
+import { InputItem, InputItemRef } from '../components/input-item';
 import Result from '../components/result';
 import { Item } from '../lib/item';
 
@@ -50,36 +50,36 @@ const Home: NextPage = () => {
   const theme = useMantineTheme();
   const mobile = useMediaQuery(`(max-width: ${theme.breakpoints.xs}px)`);
 
+  const inputItemRefs = useRef<InputItemRef[]>([]);
+
   const inputItem = (index: number, value: Item) => <InputItem
     index={index}
     form={form}
+    ref={el => inputItemRefs.current[index] = el!}
+    focusNext={() => {
+      const nextInputItem = inputItemRefs.current[index + 1]
+      if (nextInputItem) {
+        nextInputItem.focus();
+      }
+    }}
   />;
 
   const items = () => (
     <>
       {form.values.items.map((value, index) => (
-        <div key={value.key} style={{
-          display: "flex",
-          flexDirection: "row",
-          columnGap: 10,
-        }}>
+        <>
           {mobile ? <>
-            <Accordion.Item
-              value={value.key}
-              style={{
-                width: "100%",
-              }}>
-              <Accordion.Control>
-                {value.person == "" ?
-                  "New item" :
-                  `${value.person} $${value.price} ${value.quantity > 1 ? `x${value.quantity}` : ""} ${value.note}`}
-              </Accordion.Control>
-              <Accordion.Panel>
-                {inputItem(index, value)}
-              </Accordion.Panel>
-            </Accordion.Item>
-          </> : inputItem(index, value)}
-        </div>
+            {inputItem(index, value)}
+            {index < form.values.items.length - 1 ? <Divider /> : <></>}
+          </> :
+            <div key={value.key} style={{
+              display: "flex",
+              flexDirection: "row",
+              columnGap: 10,
+            }}>
+              {inputItem(index, value)}
+            </div>}
+        </>
       ))}
     </>
   );
@@ -92,17 +92,7 @@ const Home: NextPage = () => {
 
         <Space />
         <Title order={4}>Receipt</Title>
-        {mobile ? <>
-          <Accordion chevronPosition="left"
-            defaultValue={form.values.items[0].key}
-            style={{
-              marginLeft: -16,
-              marginRight: -16,
-            }}
-          >
-            {items()}
-          </Accordion>
-        </> : items()}
+        {items()}
 
         <Text>Subtotal: ${subtotal}</Text>
 
