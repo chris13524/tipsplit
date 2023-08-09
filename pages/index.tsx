@@ -87,14 +87,17 @@ const Home: NextPage = () => {
 
         <NumberInput
           label="Payment total"
+          description="(including tips, taxes, and fees)"
           icon="$"
           min={0}
           precision={2}
           step={0.01}
           {...form.getInputProps("total")}
           onFocus={(e) => e.target.select()}
-          style={{
-            width: 120,
+          styles={{
+            wrapper: {
+              width: 120,
+            }
           }}
         />
 
