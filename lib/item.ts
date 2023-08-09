@@ -3,5 +3,4 @@ export type Item = {
     person: string,
     price: number,
     quantity: number,
-    note: string,
 };

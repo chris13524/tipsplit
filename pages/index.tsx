@@ -1,6 +1,6 @@
-import { Center, Divider, NumberInput, Space, Stack, Text, Title, useMantineTheme } from '@mantine/core'
+import { Center, NumberInput, Space, Stack, Text, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { randomId, useMediaQuery } from '@mantine/hooks';
+import { randomId } from '@mantine/hooks';
 import type { NextPage } from 'next'
 import { useEffect, useRef } from 'react';
 import { InputItem, InputItemRef } from '../components/input-item';
@@ -13,7 +13,6 @@ function makeNewItem(): Item {
     person: "",
     price: 0,
     quantity: 1,
-    note: "",
   };
 }
 
@@ -25,13 +24,14 @@ const Home: NextPage = () => {
     },
   });
 
-  const subtotal = form.values.items
-    .map(item => item.price * item.quantity)
+  const subtotal100 = form.values.items
+    .map(item => item.price * 100 * item.quantity)
     .reduce((sum, value) => sum + value);
 
   useEffect(() => {
     const filteredItems = form.values.items
-      .filter(item => item.person != "" || item.price > 0 || item.note != "");
+      .filter(item => item.price > 0)
+      .map(item => ({ ...item, person: item.person.trim() })); // auto-trim names
     const newItem = makeNewItem();
 
     const origionalKey = form.values.items[form.values.items.length - 1]?.key;
@@ -42,46 +42,25 @@ const Home: NextPage = () => {
 
     form.setFieldValue("items", [...filteredItems, newItem]);
 
-    if (subtotal > form.values.total) {
-      form.setFieldValue("total", subtotal);
+    if (subtotal100 > form.values.total * 100) {
+      form.setFieldValue("total", Number((subtotal100 / 100).toFixed(2)));
     }
   }, [JSON.stringify(form.values.items)]);
 
-  const theme = useMantineTheme();
-  const mobile = useMediaQuery(`(max-width: ${theme.breakpoints.xs}px)`);
-
   const inputItemRefs = useRef<InputItemRef[]>([]);
 
-  const inputItem = (index: number, value: Item) => <InputItem
-    index={index}
-    form={form}
-    ref={el => inputItemRefs.current[index] = el!}
-    focusNext={() => {
-      const nextInputItem = inputItemRefs.current[index + 1]
-      if (nextInputItem) {
-        nextInputItem.focus();
-      }
-    }}
-  />;
-
-  const items = () => (
-    <>
-      {form.values.items.map((value, index) => (
-        <>
-          {mobile ? <>
-            {inputItem(index, value)}
-            {index < form.values.items.length - 1 ? <Divider /> : <></>}
-          </> :
-            <div key={value.key} style={{
-              display: "flex",
-              flexDirection: "row",
-              columnGap: 10,
-            }}>
-              {inputItem(index, value)}
-            </div>}
-        </>
-      ))}
-    </>
+  const inputItem = (index: number, value: Item) => (
+    <InputItem
+      index={index}
+      form={form}
+      ref={el => inputItemRefs.current[index] = el!}
+      focusNext={() => {
+        const nextInputItem = inputItemRefs.current[index + 1]
+        if (nextInputItem) {
+          nextInputItem.focus();
+        }
+      }}
+    />
   );
 
   return (
@@ -92,9 +71,19 @@ const Home: NextPage = () => {
 
         <Space />
         <Title order={4}>Receipt</Title>
-        {items()}
+        {form.values.items.map((value, index) => (
+          <div
+            key={value.key}
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              columnGap: 10,
+            }}>
+            {inputItem(index, value)}
+          </div>
+        ))}
 
-        <Text>Subtotal: ${subtotal}</Text>
+        <Text>Subtotal: ${(subtotal100 / 100).toFixed(2)}</Text>
 
         <NumberInput
           label="Payment total"
@@ -110,8 +99,8 @@ const Home: NextPage = () => {
         />
 
         <Result
-          items={form.values.items.map(item => ({ ...item, price: item.price * 100 }))}
-          subtotal={subtotal * 100}
+          items={form.values.items.map(item => ({ ...item, price: item.price }))}
+          subtotal={subtotal100}
           total={form.values.total * 100}
         />
       </Stack>
